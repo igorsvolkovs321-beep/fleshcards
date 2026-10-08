@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cardly — Flashcard Quest</title>
+<style>
+:root{--bg:#101810;--panel:#172218;--panel2:#223024;--text:#f4f7ef;--muted:#aab8a4;--line:#3b503c;--accent:#5f9f45;--accent2:#9ccc70;--gold:#d6b35a;--danger:#d96b63;--soil:#8a6847}
+*{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;background:radial-gradient(circle at 50% -10%,#29412b 0,#172319 42%,#0c120d 100%);color:var(--text);min-height:100vh;position:relative}
+body:after{content:'';position:fixed;left:0;right:0;bottom:0;height:7px;background:repeating-linear-gradient(90deg,#6b5038 0 34px,#8a6847 34px 68px);opacity:.55;pointer-events:none;z-index:0}
+button,input,textarea{font:inherit}button{cursor:pointer;border:0}
+.app{display:flex;min-height:100vh}.sidebar{width:260px;background:#111a12e8;border-right:1px solid #2a3152;padding:22px 15px;display:flex;flex-direction:column;gap:15px;backdrop-filter:blur(14px)}
+.logo{font-size:25px;font-weight:900;padding:5px 10px 18px;letter-spacing:-.04em}.logo span{color:var(--accent2)}.logo:before{content:'🌱';font-size:20px;margin-right:7px}
+.deck-list{display:flex;flex-direction:column;gap:7px;overflow:auto}.deck{display:flex;align-items:center;gap:9px;width:100%;padding:12px;border-radius:12px;background:transparent;color:#c8cde2;text-align:left;border:1px solid transparent}.deck:hover{background:#1c2239}.deck.active{background:linear-gradient(90deg,#2a2454,#202641);border-color:#514b8e;color:#fff;box-shadow:0 0 20px #7c5cff12}.deck-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}.count{font-size:12px;color:#7f89aa}
+.new-deck{margin-top:auto;background:linear-gradient(135deg,#5f9f45,#397331);color:#fff;border-radius:11px;padding:12px;font-weight:700;box-shadow:0 8px 25px #6250dc35}.new-deck:hover{filter:brightness(1.1)}
+.main{flex:1;min-width:0;padding:27px 34px}.top{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:22px}.title h1{margin:0;font-size:29px;letter-spacing:-.03em}.title p{margin:6px 0 0;color:var(--muted)}.actions{display:flex;gap:8px;flex-wrap:wrap}
+.btn{padding:9px 13px;border-radius:10px;background:#1a261b;border:1px solid var(--line);color:#e8ebf7}.btn:hover{background:#293a2b}.btn.primary{background:linear-gradient(135deg,#5f9f45,#397331);border-color:#79ad61;color:#fff;font-weight:700}.btn.danger{color:#ff8b99}
+.toolbar{display:flex;gap:10px;margin-bottom:18px}.search{flex:1;max-width:430px;padding:11px 13px;border:1px solid var(--line);border-radius:10px;background:#152016;color:#fff;outline:none}.search::placeholder{color:#6f7898}.search:focus{border-color:#7865e9;box-shadow:0 0 0 3px #7c5cff14}
+
+/* Game card area */
+.game-stage{min-height:calc(100vh - 175px);display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative}
+.quest-label{color:var(--gold);font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.16em;margin-bottom:14px}
+.card-wrap{width:min(390px,90vw);height:510px;perspective:1200px}.card{height:100%;position:relative;transform-style:preserve-3d;transition:transform .5s cubic-bezier(.2,.8,.2,1);cursor:pointer}.card.flipped{transform:rotateY(180deg)}
+.side{position:absolute;inset:0;backface-visibility:hidden;background:linear-gradient(145deg,#30472f,#18251a);border:1px solid #4a5278;border-radius:24px;padding:30px;box-shadow:0 25px 70px #0008,0 0 35px #725cff15;display:flex;flex-direction:column;overflow:hidden}.side:before{content:"";position:absolute;width:180px;height:180px;border-radius:50%;background:#7ab35a18;filter:blur(5px);right:-60px;top:-70px}.side.back{transform:rotateY(180deg);background:linear-gradient(145deg,#3b5030,#1c2b1d);border-color:#668b58}.side-label{font-size:11px;text-transform:uppercase;letter-spacing:.16em;color:#9da7c8;font-weight:800;margin-bottom:20px;position:relative}.card-text{font-size:25px;line-height:1.45;white-space:pre-wrap;overflow:auto;flex:1;display:flex;align-items:center;justify-content:center;text-align:center;position:relative}.hint{font-size:12px;color:#747e9e;text-align:center;margin-top:18px;position:relative}.card-controls{display:flex;gap:7px;justify-content:center;margin-top:16px;position:relative}.icon-btn{background:#263827;color:#e9ecf8;border:1px solid #3c4567;border-radius:9px;padding:8px 10px}.icon-btn:hover{background:#344a34}
+.game-actions{display:flex;align-items:center;gap:14px;margin-top:20px}.next-btn{padding:12px 23px;border-radius:12px;background:linear-gradient(135deg,#ffd166,#e6a92e);color:#18130a;font-weight:900;box-shadow:0 8px 25px #d49e2728}.next-btn:hover{transform:translateY(-1px);filter:brightness(1.06)}.shuffle-note{font-size:12px;color:#737d9d}
+.empty{padding:70px 20px;text-align:center;color:var(--muted);border:2px dashed #343b60;border-radius:18px;max-width:500px}.empty h2{color:var(--text);margin:0 0 8px}
+.modal-bg{position:fixed;inset:0;background:#071008cc;display:none;align-items:center;justify-content:center;padding:20px;z-index:10;backdrop-filter:blur(5px)}.modal-bg.show{display:flex}.modal{width:min(560px,100%);background:#191e34;border:1px solid #3a4264;border-radius:17px;padding:24px;box-shadow:0 25px 70px #0008}.modal h2{margin:0 0 18px}.field{margin:13px 0}.field label{display:block;font-size:13px;font-weight:700;margin-bottom:7px;color:#cbd0e5}.field input,.field textarea{width:100%;border:1px solid #3a4263;border-radius:9px;padding:11px;background:#10152a;color:#fff;outline:none}.field textarea{min-height:115px;resize:vertical}.field input:focus,.field textarea:focus{border-color:#7965ec}.modal-actions{display:flex;justify-content:flex-end;gap:9px;margin-top:20px}
+/* Study animations */
+@keyframes cardDraw{0%{opacity:0;transform:translateY(55px) scale(.94) rotate(2deg)}65%{opacity:1;transform:translateY(-7px) scale(1.01) rotate(-.5deg)}100%{opacity:1;transform:translateY(0) scale(1) rotate(0)}}
+@keyframes deckShuffle{0%{transform:translateX(0) rotate(0)}20%{transform:translateX(-18px) rotate(-4deg)}40%{transform:translateX(18px) rotate(4deg)}60%{transform:translateX(-12px) rotate(-3deg)}80%{transform:translateX(12px) rotate(3deg)}100%{transform:translateX(0) rotate(0)}}
+@keyframes shuffleGlow{0%,100%{box-shadow:0 20px 50px #0006}50%{box-shadow:0 0 35px #6fa95555,0 20px 55px #0007}}
+.card.entering{animation:none}.card-wrap.drawing{animation:cardDraw .48s cubic-bezier(.2,.8,.2,1) both}
+.deck-panel.shuffling{animation:deckShuffle .65s ease-in-out,shuffleGlow .65s ease-in-out}
+.shuffle-message{font-size:13px;color:#cdd9bd;text-align:center;margin-top:18px;padding:10px;border-radius:10px;background:#263b25;border:1px solid #46643f}
+/* Deck + editor */
+.game-layout{width:min(980px,100%);display:grid;grid-template-columns:minmax(320px,390px) 250px;gap:28px;align-items:center;justify-content:center}
+.study-main{display:flex;flex-direction:column;align-items:center}.deck-panel{background:linear-gradient(145deg,#1d2b1d,#111a12);border:1px solid #343d62;border-radius:20px;padding:18px;min-height:340px;box-shadow:0 20px 50px #0006}.deck-panel-title{font-size:13px;font-weight:800;color:#cbd2ec;margin-bottom:14px;display:flex;justify-content:space-between}.remaining-count{color:var(--accent2)}.stack{position:relative;height:285px}.stack-card{position:absolute;inset:0;border-radius:16px;border:1px solid #454e76;background:linear-gradient(145deg,#242b49,#171b30);padding:18px;display:flex;align-items:center;justify-content:center;text-align:center;color:#8f99b9;font-size:14px;overflow:hidden}.stack-card:nth-child(1){transform:translate(0,0);color:#eef1ff;box-shadow:0 15px 30px #0005}.stack-card:nth-child(2){transform:translate(7px,7px) rotate(1.5deg);opacity:.8}.stack-card:nth-child(3){transform:translate(14px,14px) rotate(3deg);opacity:.55}.stack-card:nth-child(n+4){transform:translate(20px,20px) rotate(4deg);opacity:.3}.stack-back{font-size:28px;opacity:.45;filter:saturate(.7)}.stack-empty{height:285px;display:flex;align-items:center;justify-content:center;text-align:center;color:var(--muted);border:1px dashed #394263;border-radius:15px;padding:20px}.progress-text{margin-top:12px;color:#737d9d;font-size:12px;text-align:center}.editor-stage{display:none}.editor-stage.show{display:block}.editor-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:15px}.editor-head h2{margin:0}.editor-list{display:grid;gap:10px}.editor-card{display:grid;grid-template-columns:55px 1fr auto;gap:14px;align-items:center;background:#171c31;border:1px solid #303958;border-radius:14px;padding:13px}.editor-num{width:38px;height:38px;border-radius:10px;background:#252b49;display:grid;place-items:center;color:#aeb7d4;font-weight:800}.editor-sides{min-width:0}.editor-front{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.editor-back{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:4px}.editor-actions{display:flex;gap:7px}.editor-empty{padding:60px 20px;text-align:center;color:var(--muted);border:2px dashed #343b60;border-radius:18px}.edit-banner{margin-bottom:18px;padding:12px 15px;border-radius:12px;background:#201d3e;border:1px solid #514a82;color:#c9c3ff}
+button,.card,.deck-panel,.stack-card{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+@media(max-width:700px){.app{display:block}.sidebar{width:100%;padding:12px;border-right:0;border-bottom:1px solid #2a3152}.logo{padding:4px 6px 10px}.deck-list{flex-direction:row;overflow:auto}.deck{min-width:max-content}.new-deck{margin-top:2px}.main{padding:18px 12px}.top{align-items:flex-start;flex-direction:column}.actions{width:100%}.game-layout{grid-template-columns:1fr}.deck-panel{width:min(390px,90vw)}.game-stage{min-height:calc(100vh - 280px)}.card-wrap{height:470px}.card-text{font-size:22px}.editor-card{grid-template-columns:42px 1fr}.editor-actions{grid-column:2}.editor-head{align-items:flex-start;flex-direction:column}}
+</style>
+</head>
+<body>
+<div class="app">
+<aside class="sidebar">
+  <div class="logo">Card<span>ly</span></div>
+  <div id="deckList" class="deck-list"></div>
+  <button class="new-deck" onclick="newDeck()">＋ Новый сборник</button>
+</aside>
+<main class="main">
+  <div class="top">
+    <div class="title"><h1 id="deckTitle"></h1><p id="deckInfo"></p></div>
+    <div class="actions">
+      <button class="btn" onclick="renameDeck()">✏️ Переименовать</button>
+      <button class="btn danger" onclick="deleteDeck()">🗑 Удалить</button>
+      <button class="btn" id="editModeBtn" onclick="toggleEditMode()">⚙️ Редактировать карточки</button>
+    </div>
+  </div>
+  <div class="toolbar" id="studyToolbar"><input id="search" class="search" placeholder="Поиск по карточкам…" oninput="renderCards()"></div>
+  <div id="cards" class="game-stage"></div>
+  <div id="editor" class="editor-stage"></div>
+</main>
+</div>
+
+<div id="modalBg" class="modal-bg" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <h2 id="modalTitle"></h2>
+    <div class="field"><label>Лицевая сторона</label><textarea id="front" placeholder="Например: What does 'apple' mean?"></textarea></div>
+    <div class="field"><label>Обратная сторона</label><textarea id="back" placeholder="Например: яблоко"></textarea></div>
+    <div class="modal-actions"><button class="btn" onclick="closeModal()">Отмена</button><button class="btn primary" onclick="saveCard()">Сохранить</button></div>
+  </div>
+</div>
+
+<script>
+const KEY='cardly-v1';
+function uid(){return (window.crypto&&typeof crypto.randomUUID==='function')?crypto.randomUUID():('id-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,10)+'-'+Math.random().toString(36).slice(2,10));}
+function loadData(){try{return JSON.parse(localStorage.getItem(KEY)||'null')}catch(e){return null}}
+function storeData(v){try{localStorage.setItem(KEY,JSON.stringify(v))}catch(e){/* file:// browsers may block storage; keep the session usable */}}
+let data=loadData()||{
+  active:0,
+  decks:[{id:uid(),name:'Мой первый сборник',cards:[
+    {id:uid(),front:'Нажми на карточку',back:'Она перевернётся и покажет эту сторону.'},
+    {id:uid(),front:'Можно редактировать',back:'У каждой карточки свои стороны.'}
+  ]}]
+};
+let editing=null;
+let editMode=false;
+let currentCardId=null;
+let remainingIds=[];
+
+function save(){storeData(data)}
+function activeDeck(){return data.decks[data.active]}
+function esc(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
+function plural(n,a,b,c){let x=n%100;return x>=11&&x<=19?c:(n%10===1?a:n%10>=2&&n%10<=4?b:c)}
+function shuffle(a){for(let i=a.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function resetCycle(){remainingIds=shuffle(activeDeck().cards.map(c=>c.id))}
+function ensureCycle(){
+  const ids=new Set(activeDeck().cards.map(c=>c.id));
+  remainingIds=remainingIds.filter(id=>ids.has(id));
+  if(!remainingIds.length && activeDeck().cards.length) resetCycle();
+}
+function drawCard(){
+  ensureCycle();
+  if(!remainingIds.length)return null;
+  const id=remainingIds.shift();
+  const c=activeDeck().cards.find(x=>x.id===id);
+  currentCardId=c?.id||null;
+  return c||null;
+}
+function render(){
+  if(data.active>=data.decks.length)data.active=0;
+  const d=activeDeck();
+  document.getElementById('deckTitle').textContent=d.name;
+  document.getElementById('deckInfo').textContent=`${d.cards.length} ${plural(d.cards.length,'карточка','карточки','карточек')}`;
+  document.getElementById('deckList').innerHTML=data.decks.map((x,i)=>`<button class="deck ${i===data.active?'active':''}" onclick="selectDeck(${i})"><span>🌱</span><span class="deck-name">${esc(x.name)}</span><span class="count">${x.cards.length}</span></button>`).join('');
+  if(editMode) renderEditor(); else renderCards();
+}
+function renderCards(){
+  const box=document.getElementById('cards');
+  document.getElementById('editor').classList.remove('show');
+  document.getElementById('studyToolbar').style.display='flex';
+  const q=document.getElementById('search').value.trim().toLowerCase();
+  const all=activeDeck().cards;
+  const filtered=all.filter(c=>(c.front+' '+c.back).toLowerCase().includes(q));
+  if(!all.length){box.innerHTML=`<div class="empty"><h2>Сборник пуст</h2><div>Нажми «Редактировать карточки» и добавь первую карточку.</div></div>`;return}
+  if(!filtered.length){box.innerHTML=`<div class="empty"><h2>Ничего не найдено</h2><div>Попробуй другой запрос.</div></div>`;return}
+  // Search is only a view filter; the study cycle itself always uses the full deck.
+  if(!currentCardId || !all.some(c=>c.id===currentCardId)) drawCard();
+  let c=all.find(x=>x.id===currentCardId);
+  if(q && !filtered.some(x=>x.id===c.id)) c=filtered[0];
+  const remainingCount=remainingIds.length;
+  const previewIds=remainingIds.slice(0,4);
+  box.innerHTML=`<div class="game-layout">
+    <div class="study-main">
+      <div class="quest-label">⚡ КАРТОЧКА ${all.length-remainingCount} ИЗ ${all.length}</div>
+      <div class="card-wrap drawing">
+       <div class="card" id="gameCard" onclick="flip()">
+        <div class="side front"><div class="side-label">Вопрос / лицевая сторона</div><div class="card-text">${esc(c.front)}</div><div class="hint">Нажми на карточку, чтобы перевернуть</div></div>
+        <div class="side back"><div class="side-label">Ответ / обратная сторона</div><div class="card-text">${esc(c.back)}</div><div class="card-controls"><button class="icon-btn" onclick="event.stopPropagation();editCard('${c.id}')">✏️ Редактировать</button></div></div>
+       </div>
+      </div>
+      <div class="game-actions"><button class="next-btn" onclick="nextCard()">Следующая карточка →</button><span class="shuffle-note">Карточки не повторяются до конца колоды</span></div>
+    </div>
+    <aside class="deck-panel">
+      <div class="deck-panel-title"><span>Оставшиеся в колоде</span><span class="remaining-count">${remainingCount}</span></div>
+      ${previewIds.length?`<div class="stack">${previewIds.map((id,i)=>`<div class="stack-card" style="z-index:${4-i}"><span class="stack-back">🌱</span></div>`).join('')}</div>`:`<div class="stack-empty">Это последняя карточка.<br>После неё колода перемешается и начнётся заново.</div>`}
+      <div class="progress-text">После каждой карточки она исчезает из колоды справа.</div>
+    </aside>
+  </div>`;
+}
+let movingToNext=false;
+function nextCard(){
+  if(movingToNext || !activeDeck().cards.length)return;
+  movingToNext=true;
+  const panel=document.querySelector('.deck-panel');
+  const needsShuffle=remainingIds.length===0;
+  if(needsShuffle){
+    panel?.classList.add('shuffling');
+    setTimeout(()=>{
+      resetCycle();
+      panel?.classList.remove('shuffling');
+      const n=drawCard();
+      movingToNext=false;
+      if(n) renderCards();
+    },650);
+  }else{
+    setTimeout(()=>{
+      const n=drawCard();
+      movingToNext=false;
+      if(n) renderCards();
+    },180);
+  }
+}
+function flip(){
+  const card=document.getElementById('gameCard');
+  if(!card || movingToNext)return;
+  if(!card.classList.contains('flipped')){
+    card.classList.add('flipped');
+  }else{
+    nextCard();
+  }
+}
+function toggleEditMode(){
+  editMode=!editMode;
+  const btn=document.getElementById('editModeBtn');
+  btn.textContent=editMode?'← Выйти из редактирования':'⚙️ Редактировать карточки';
+  document.getElementById('studyToolbar').style.display=editMode?'none':'flex';
+  if(editMode) renderEditor(); else {currentCardId=null;resetCycle();renderCards()}
+}
+function renderEditor(){
+  const d=activeDeck(), editor=document.getElementById('editor');
+  document.getElementById('cards').innerHTML='';
+  document.getElementById('studyToolbar').style.display='none';
+  editor.classList.add('show');
+  editor.innerHTML=`<div class="edit-banner">✏️ Режим редактирования — здесь можно изменять и удалять карточки. Для возвращения к обучению нажми «Выйти из редактирования».</div>
+    <div class="editor-head"><h2>Карточки сборника</h2><button class="btn primary" onclick="newCard()">＋ Новая карточка</button></div>
+    ${d.cards.length?`<div class="editor-list">${d.cards.map((c,i)=>`<div class="editor-card"><div class="editor-num">${i+1}</div><div class="editor-sides"><div class="editor-front">${esc(c.front)||'Без лицевой стороны'}</div><div class="editor-back">${esc(c.back)||'Без обратной стороны'}</div></div><div class="editor-actions"><button class="icon-btn" onclick="editCard('${c.id}')">✏️</button><button class="icon-btn" onclick="removeCard('${c.id}')">🗑</button></div></div>`).join('')}</div>`:`<div class="editor-empty">В этом сборнике пока нет карточек.<br><br><button class="btn primary" onclick="newCard()">＋ Добавить карточку</button></div>`}`;
+}
+function selectDeck(i){data.active=i;currentCardId=null;resetCycle();save();document.getElementById('search').value='';render()}
+function newDeck(){let name=prompt('Название нового сборника:','Новый сборник');if(!name?.trim())return;data.decks.push({id:uid(),name:name.trim(),cards:[]});data.active=data.decks.length-1;currentCardId=null;remainingIds=[];save();render()}
+function renameDeck(){let d=activeDeck(),name=prompt('Новое название:',d.name);if(name?.trim()){d.name=name.trim();save();render()}}
+function deleteDeck(){if(data.decks.length===1)return alert('Нельзя удалить последний сборник.');if(confirm(`Удалить сборник «${activeDeck().name}» вместе со всеми карточками?`)){data.decks.splice(data.active,1);data.active=Math.max(0,data.active-1);currentCardId=null;resetCycle();save();render()}}
+function newCard(){editing=null;document.getElementById('modalTitle').textContent='Новая карточка';document.getElementById('front').value='';document.getElementById('back').value='';openModal()}
+function editCard(id){editing=id;let c=activeDeck().cards.find(x=>x.id===id);if(!c)return;document.getElementById('modalTitle').textContent='Редактировать карточку';document.getElementById('front').value=c.front;document.getElementById('back').value=c.back;openModal()}
+function saveCard(){
+  let front=document.getElementById('front').value.trim(),back=document.getElementById('back').value.trim();
+  if(!front&&!back)return alert('Заполни хотя бы одну сторону.');
+  if(editing){let c=activeDeck().cards.find(x=>x.id===editing);if(c){c.front=front;c.back=back}}
+  else {let c={id:uid(),front,back};activeDeck().cards.push(c);remainingIds.push(c.id)}
+  save();closeModal();render();
+}
+function removeCard(id){
+  if(!confirm('Удалить эту карточку?'))return;
+  activeDeck().cards=activeDeck().cards.filter(c=>c.id!==id);
+  remainingIds=remainingIds.filter(x=>x!==id);
+  if(currentCardId===id){currentCardId=null;drawCard()}
+  save();render();
+}
+function openManager(){if(!editMode)toggleEditMode()}
+function openModal(){document.getElementById('modalBg').classList.add('show');setTimeout(()=>document.getElementById('front').focus(),50)}
+function closeModal(){document.getElementById('modalBg').classList.remove('show');editing=null}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();if(e.key==='Enter'&&e.ctrlKey&&document.getElementById('modalBg').classList.contains('show'))saveCard()})
+resetCycle();
+render();
+</script>
+</body>
+</html>
